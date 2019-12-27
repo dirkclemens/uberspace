@@ -17,7 +17,7 @@
 // ---------------------------------------------------------------------------------------------------
 // init
 // ---------------------------------------------------------------------------------------------------
-$smarthomedb = '/home/mbx/varwww/dashboard.adcore.de/smarthome.db';
+$smarthomedb = '.....smarthome.db';
 
 // ---------------------------------------------------------------------------------------------------
 // required headers
@@ -63,16 +63,12 @@ switch ($method) {
 
     // https://www.php.net/manual/de/function.date.php
     $timestamp = date('Y-m-d H:i:s'); // %Y-%m-%d %H:%M:%S // 2019-11-17 16:07:16
-    $timestampM = date('Y-m-d'); // %Y-%m-%d %H:%M:%S // 2019-11-17 16:07:16
     if ($request[1] == "piko42"){
         $sql = "INSERT INTO PIKO42 (TIMESTAMP, CURRENT, TOTAL, DAILY, VOLTAGE, POWER) VALUES ('".$timestamp."',".$input['current'].",".$input[
 'total'].",".$input['daily'].",".$input['voltage'].",".$input['power'].");";
-        $sqlcurrent = "UPDATE 'CURRENT' SET 'PVCURRENT'=".$input['current'].", 'PVDAILY'=".$input['daily']." , 'PVTOTAL'=".$input[
-'total']." WHERE 'TIMESTAMP'=".$timestampM.";";
     }
     if ($request[1] == "strom"){
         $sql = "INSERT INTO STROM (TIMESTAMP, V180, V280, V167) VALUES ('".$timestamp."',".$input['SML']['Total_in'].",".$input['SML']['Total_out'].",".$input['SML']['Power_curr'].");";
-        $sqlcurrent = "UPDATE 'CURRENT' SET 'V180'=".$input['SML']['Total_in'].", 'V280'=".$input['SML']['Total_out']." WHERE 'TIMESTAMP'=".$timestampM.";";
     }
     $response = doSQL($sql);
     break;
@@ -101,31 +97,12 @@ function doSQL($sql){
     // connect to the sqlite database
     $db = new SQLite3($smarthomedb);
 
-
-    // tables "piko42" or "strom"
     $ret = $db->exec($sql);
     if(!$ret){
         $response .= $db->lastErrorMsg();
     } else {
         $response .= $db->changes()." done successfully";
     }
-    //file_put_contents('sql.log', $sql.'-->'.$response.'\r\n', FILE_APPEND | LOCK_EX);
-
-/*    
-
-    // INSERT OR IGNORE INTO book(id) VALUES(1001);
-    $ret = $db->exec("INSERT INTO 'CURRENT' ('TIMESTAMP','V180','V280','PVCURRENT','PVDAILY','PVTOTAL') VALUES ('".$ts."',NULL,NULL,NULL,NULL,NULL);");
-    //file_put_contents('sql.log', 'INSERT INTO CURRENT-->'.$ret.'\r\n', FILE_APPEND | LOCK_EX);
-
-    // table "current"
-    $ret = $db->exec($sqlcurrent);
-    if(!$ret){
-        $response .= $db->lastErrorMsg();
-    } else {
-        $response .= $db->changes()." done successfully";
-    }    
-    //file_put_contents('sql.log', $sqlcurrent.'-->'.$response.'\r\n', FILE_APPEND | LOCK_EX);
-*/
 
     $db->close();
 
@@ -186,29 +163,5 @@ function server_vars(){
     echo '</table>' ; 
 }
 
-/*
-switch ($method) {
-  case 'GET':
-    if ($dateiname == NULL)
-    { // Verzeichnis auflisten
-      foreach (scandir('files/') as $datei)
-      {
-        if(substr($datei,-strlen(".txt")) == ".txt")
-            echo ("<a href='$datei'> $datei</a><br>");
-      }
-    } else
-        echo (file_get_contents('files/'.$dateiname));
-    break;
-  case 'POST':
-    file_put_contents('files/'.$dateiname, $daten);
-    break;
-  case 'PUT':
-    file_put_contents('files/'.$dateiname, $daten, FILE_APPEND);
-    break;
-  case 'DELETE':
-    unlink('files/'.$dateiname);
-    break;
-}
-*/
 ?>
 
