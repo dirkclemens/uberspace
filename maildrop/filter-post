@@ -1,0 +1,140 @@
+########################################################
+# https://gist.github.com/fgr0/8aa5397ade17a9ce1bd74193f7fb10af#file-maildrop-conf
+########################################################
+# check filter: 
+# chmod 600 .filter-*
+# echo | maildrop -V 1 2>/dev/null && echo "OK" || echo "Error $?"
+# maildrop -V 4 -d logname < 
+########################################################
+#### Meine Umgebungsvariablen
+HOME="/home/mbx"
+MAILDIR="$HOME/users/post"
+DEFAULT="$MAILDIR"
+SPAMDIR="$MAILDIR/.INBOX.Spamfilter"
+BLACKDIR="$MAILDIR/.INBOX.SpamBlacklist"
+
+########################################################
+#
+logfile "$HOME/mailfilter-post.log"
+log "\n--------------------------------------------"
+
+# call the sorting python script
+#PYRESULT=`python $HOME/bin/mails_to.py --logfilename $HOME/bin/mails_to.log`
+#log "mails_to: "$PYRESULT
+
+########################################################
+# global settings
+include "$HOME/.maildrop-global.conf"
+########################################################
+
+########################################################
+# debugging infos to log
+include "$HOME/.maildrop-debug.conf"
+########################################################
+
+########################################################
+# Hier stehen meine Regelwerke
+########################################################
+/^From:.*/
+getaddr($MATCH) =~ /^.*/;
+MATCH=tolower($MATCH)
+### blacklist / whitelist ##############################
+#if( lookup($MATCH, "maildrop-whitelist") )
+#{
+#	##log "whitelist: "$MATCH
+#	to "$MAILDIR"
+#}	
+#if ( lookup($MATCH, "maildrop-blacklist") )
+#{
+#	oldsubject = `reformail -x Subject:`
+#	xfilter "reformail -I'Subject: [BLACKLIST] $oldsubject'"
+#	log "blacklist: "$MATCH
+#	to "$SPAMDIR"
+#}
+########################################################
+/^Subject:.*/
+if ( lookup($MATCH, "maildrop-subject-blacklist") )
+{
+	oldsubject = `reformail -x Subject:`
+	xfilter "reformail -I'Subject: [BLACKLIST] $oldsubject'"
+	log "subject-blacklist: "$MATCH
+	to "$SPAMDIR"
+	exit
+}
+########################################################
+#/.*/
+#if ( lookup($MATCH, "maildrop-body-blacklist") /:b )
+#{
+#	log "body-blacklist: "$MATCH
+#	to "$SPAMDIR"
+#}
+
+########################################################
+# spam filtering
+include "$HOME/.maildrop-spam.conf"
+########################################################
+
+########################################################
+# aus Mailing Liste ?
+/^List-Unsubscribe:.*/
+log "List-Unsubscribe: "$MATCH
+
+########################################################
+# bei bestimmten Subjects direkt droppen
+#	if ($mystring =~ /s1\.domain\.com/) {
+#   	print qq("$mystring" contains "s1.domain.com"\n);
+#	}
+if(/^Subject: *!.*$/)
+{
+    if($MATCH1 =~ /Generika/)
+    {
+	log "DELETED: "$MATCH
+    	exit
+    }
+    if($MATCH1 =~ /Apotheke/)
+    {
+	log "DELETED: "$MATCH
+    	exit
+    }
+    if($MATCH1 =~ /Bitcoin/)
+    {
+	log "DELETED: "$MATCH
+    	exit
+    }
+    if($MATCH1 =~ /Viagra/)
+    {
+	log "DELETED: "$MATCH
+    	exit
+    }
+    if($MATCH1 =~ /Pillenversand/)
+    {
+	log "DELETED: "$MATCH
+    	exit
+    }
+}
+
+########################################################
+# bei bestimmten Froms direkt droppen
+if(/^From: *!.*$/)
+{
+    if($MATCH1 =~ /Generika/)
+    {
+	log "DELETED: "$MATCH
+    	exit
+    }
+    if($MATCH1 =~ /Drugstore/)
+    {
+	log "DELETED: "$MATCH
+    	exit
+    }
+    if($MATCH1 =~ /Apotheke/)
+    {
+	log "DELETED: "$MATCH
+    	exit
+    }
+}
+
+########################################################
+# Standardregel:
+########################################################
+to "$DEFAULT"
