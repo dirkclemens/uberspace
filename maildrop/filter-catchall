@@ -1,0 +1,117 @@
+########################################################
+#
+# catchall
+# cat test2.eml | maildrop .filter-catchall
+#
+########################################################
+# check filter: 
+# chmod 600 .filter-*
+# echo | maildrop -V 1 2>/dev/null && echo "OK" || echo "Error $?"
+# maildrop -V 4 -d logname < 
+########################################################
+#### Umgebungsvariablen
+HOME="/home/mbx"
+MAILDIR="$HOME/users/catchall"
+DEFAULT="$MAILDIR"
+SPAMDIR="$MAILDIR/.INBOX.Spamfilter"
+BLACKDIR="$MAILDIR/.INBOX.SpamBlacklist"
+
+########################################################
+#
+logfile "$HOME/mailfilter-catchall.log"
+log "--------------------------------------------"
+
+########################################################
+# global settings
+include "$HOME/.maildrop-global.conf"
+########################################################
+
+########################################################
+# debugging infos to log
+include "$HOME/.maildrop-debug.conf"
+########################################################
+
+########################################################
+# spam filtering
+include "$HOME/.maildrop-spam.conf"
+########################################################
+
+########################################################
+# aus Mailing Liste ?
+#/^List-Unsubscribe:.*/
+#log "List-Unsubscribe: "$MATCH
+
+
+########################################################
+# eigentliche verteilung
+########################################################
+# Instead of looking at "To" or "Cc" we look at the
+# "Delivered-To: " header, which is added by qmail, because
+# it's easier and it's reliably there in contrast to the others
+#
+ADDR=""
+DOMAIN=""
+# For now just loop over all occurences and take the last email
+foreach /^(To|Delivered-To):\s*.*/
+{
+    ADDR=getaddr($MATCH)
+    #log "ADDR: "$ADDR
+    #DOMAIN=getaddr($MATCH1)
+    #log "DOMAIN: "$DOMAIN
+    # Filter by recipient
+    # Use sed to extract just the local part of the url without username
+    MAILUSER=`echo $ADDR | sed 's/^[a-z0-9]*-\(.*\)@.*/\1/'`
+    log "MAILUSER: "$MAILUSER
+    MAILDOMAIN=`echo $ADDR | cut -d @ -f2`
+    log "MAILDOMAIN: "$MAILDOMAIN
+    
+    if ( $MAILDOMAIN =~ /dirkc\.de/ && $MAILUSER =~ /dirkc/ )
+    {
+        log "--> dirkc@dirkc.de --> /dev/null"
+        echo "550 5.1.1 <dirkc@dirkc.de>: Recipient address rejected: User unknown in local recipient table"
+        exit
+	    to "$SPAMDIR"	
+    }
+    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /check24/ )
+    {
+        log "--> weiter an doris@steinwartz.de"
+    	to "$HOME/users/doris"
+    }
+    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /shop/ )
+    {
+        log "--> weiter an doris@steinwartz.de"
+    	to "$HOME/users/doris"
+    }
+    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /paypal19/ )
+    {
+        log "--> weiter an doris@steinwartz.de"
+    	to "$HOME/users/doris"
+    }
+    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /fake/ )
+    {
+        log "--> weiter an doris@steinwartz.de"
+    	to "$HOME/users/doris"
+    }
+    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /bringapp/ )
+    {
+        log "--> weiter an doris@steinwartz.de"
+    	to "$HOME/users/doris"
+    }
+    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /amazon/ )
+    {
+        log "--> weiter an doris@steinwartz.de"
+    	to "$HOME/users/doris"
+    }
+    elsif ( $MAILDOMAIN =~ /dirkc\.de/ )
+    {
+        log "--> weiter an post@dirkc.de"
+        to "$HOME/users/post" 
+    }
+    else
+        to "$DEFAULT"
+}
+
+
+#### default
+to "$DEFAULT"
+
