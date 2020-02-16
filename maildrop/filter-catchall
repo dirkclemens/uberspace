@@ -1,7 +1,12 @@
 ########################################################
 #
 # catchall
-# cat test2.eml | maildrop .filter-catchall
+# cat ./mailfilter/test2.eml | maildrop .filter-catchall
+# cat ./mailfilter/testdirkc.eml | maildrop .filter-catchall
+# cat ./mailfilter/testnetflix.eml | maildrop .filter-catchall
+# cat ./mailfilter/testutf8.eml | maildrop .filter-catchall
+# cat ./mailfilter/testdotco.eml | maildrop .filter-catchall
+# cat ./mailfilter/test4.eml | maildrop .filter-catchall
 #
 ########################################################
 # check filter: 
@@ -9,109 +14,171 @@
 # echo | maildrop -V 1 2>/dev/null && echo "OK" || echo "Error $?"
 # maildrop -V 4 -d logname < 
 ########################################################
+
 #### Umgebungsvariablen
 HOME="/home/mbx"
 MAILDIR="$HOME/users/catchall"
+MAILFILTER="$HOME/mailfilter"
+DROPDIR="$HOME/users/catchall/.INBOX.Dropped"
 DEFAULT="$MAILDIR"
 SPAMDIR="$MAILDIR/.INBOX.Spamfilter"
 BLACKDIR="$MAILDIR/.INBOX.SpamBlacklist"
+MUELLDIR="$MAILDIR/.INBOX.muell"
 
 ########################################################
 #
-logfile "$HOME/mailfilter-catchall.log"
+logfile "$MAILFILTER/mailfilter-catchall.log"
 log "--------------------------------------------"
+
+# import RECIPIENT
+# log "RECIPIENT: "$RECIPIENT
+
+########################################################
+# check if we're called from a .qmail-EXT  instead of .qmail
+import EXT
+# if ( $EXT )
+# {
+#     log "EXT is $EXT"
+# }
+
+# https://www.linux-magazin.de/ausgaben/2007/01/muellsortierung/
+`test "$EXT" == "doublebounce"`
+if ( $RETURNCODE == 0 )
+{
+    log "Delete doublebounce"
+    exit
+}
 
 ########################################################
 # global settings
-include "$HOME/.maildrop-global.conf"
+include "$MAILFILTER/maildrop-global.conf"
 ########################################################
+SPAMMIN=3
+SPAMMAX=9
 
 ########################################################
 # debugging infos to log
-include "$HOME/.maildrop-debug.conf"
+#include "$MAILFILTER/maildrop-debug.conf"
 ########################################################
-
-########################################################
-# spam filtering
-include "$HOME/.maildrop-spam.conf"
-########################################################
-
-########################################################
-# aus Mailing Liste ?
-#/^List-Unsubscribe:.*/
-#log "List-Unsubscribe: "$MATCH
 
 
 ########################################################
-# eigentliche verteilung
+# vorfilterung spezieller Mailadressen 
+# je nach Filter die Variable $MAILDIR setzen
 ########################################################
 # Instead of looking at "To" or "Cc" we look at the
 # "Delivered-To: " header, which is added by qmail, because
 # it's easier and it's reliably there in contrast to the others
 #
 ADDR=""
-DOMAIN=""
 # For now just loop over all occurences and take the last email
 foreach /^(To|Delivered-To):\s*.*/
 {
     ADDR=getaddr($MATCH)
     #log "ADDR: "$ADDR
-    #DOMAIN=getaddr($MATCH1)
-    #log "DOMAIN: "$DOMAIN
     # Filter by recipient
     # Use sed to extract just the local part of the url without username
     MAILUSER=`echo $ADDR | sed 's/^[a-z0-9]*-\(.*\)@.*/\1/'`
-    log "MAILUSER: "$MAILUSER
     MAILDOMAIN=`echo $ADDR | cut -d @ -f2`
-    log "MAILDOMAIN: "$MAILDOMAIN
+    log "foreach Delivered-to: $MAILUSER at $MAILDOMAIN ($MATCH)"
     
-    if ( $MAILDOMAIN =~ /dirkc\.de/ && $MAILUSER =~ /dirkc/ )
+    if ( $MAILDOMAIN =~ /dirkc\.de/  )
     {
-        log "--> dirkc@dirkc.de --> /dev/null"
-        echo "550 5.1.1 <dirkc@dirkc.de>: Recipient address rejected: User unknown in local recipient table"
+        if ( $MAILUSER =~ /dirkc@dirkc/ ) 
+        {
+            log "--> dirkc@dirkc.de --> /dev/null"
+            echo "550 5.1.1 <dirkc@dirkc.de>: Recipient address rejected: User unknown in local recipient table"
+            oldsubject = `reformail -x Subject:`
+            xfilter "reformail -I \"Subject: [Dropped:$MAILUSER] $oldsubject\""
+            to "$MUELLDIR"
+            exit
+        }
+
+        exception {
+            log "$EXT --> weiter an post@dirkc.de [$MAILUSER@$MAILDOMAIN]"
+            to "!post@dirkc.de"
+            exit
+        }
+    }
+
+    if ( $MAILDOMAIN =~ /steinwartz\.de/ )
+    {
+        if ( $MAILUSER =~ /doris/ )
+        {
+            log "--> weiter an doris@steinwartz.de [$MAILUSER@$MAILDOMAIN]"
+            to "!doris@steinwartz.de"
+            exit
+        }        
+        
+        if ( $MAILUSER =~ /doris.\zeh/ )
+        {
+            log "--> weiter an doris@steinwartz.de [$MAILUSER@$MAILDOMAIN]"
+            to "!doris@steinwartz.de"
+            exit
+        }        
+        
+        if ( $MAILUSER =~ /paypal19/ )
+        {
+            log "--> weiter an doris@steinwartz.de [$MAILUSER@$MAILDOMAIN]"
+            to "!doris@steinwartz.de"
+            exit
+        }
+
+        if ( $MAILUSER =~ /check24/ )
+        {
+            log "--> weiter an doris@steinwartz.de [$MAILUSER@$MAILDOMAIN]"
+            to "!doris@steinwartz.de"
+            exit
+        }
+
+        if ( $MAILUSER =~ /shop/ )
+        {
+            log "--> weiter an doris@steinwartz.de [$MAILUSER@$MAILDOMAIN]"
+            to "!doris@steinwartz.de"
+            exit
+        }
+
+        if ( $MAILUSER =~ /fake/ )
+        {
+            log "--> weiter an doris@steinwartz.de [$MAILUSER@$MAILDOMAIN]"
+            to "!doris@steinwartz.de"
+            exit
+        }
+
+        if ( $MAILUSER =~ /amazon/ )
+        {
+            log "--> weiter an doris@steinwartz.de [$MAILUSER@$MAILDOMAIN]"
+            to "!doris@steinwartz.de"
+            exit
+        }
+
+        log "[.filter-catchall] DROPPED> $MAILUSER@$MAILDOMAIN >> /dev/null"
         exit
-	    to "$SPAMDIR"	
     }
-    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /check24/ )
-    {
-        log "--> weiter an doris@steinwartz.de"
-    	to "$HOME/users/doris"
-    }
-    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /shop/ )
-    {
-        log "--> weiter an doris@steinwartz.de"
-    	to "$HOME/users/doris"
-    }
-    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /paypal19/ )
-    {
-        log "--> weiter an doris@steinwartz.de"
-    	to "$HOME/users/doris"
-    }
-    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /fake/ )
-    {
-        log "--> weiter an doris@steinwartz.de"
-    	to "$HOME/users/doris"
-    }
-    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /bringapp/ )
-    {
-        log "--> weiter an doris@steinwartz.de"
-    	to "$HOME/users/doris"
-    }
-    elsif ( $MAILDOMAIN =~ /steinwartz\.de/ && $MAILUSER =~ /amazon/ )
-    {
-        log "--> weiter an doris@steinwartz.de"
-    	to "$HOME/users/doris"
-    }
-    elsif ( $MAILDOMAIN =~ /dirkc\.de/ )
-    {
-        log "--> weiter an post@dirkc.de"
-        to "$HOME/users/post" 
-    }
-    else
-        to "$DEFAULT"
+    
+    log "[.filter-catchall] 'foreach To' without result> $MATCH1"
 }
 
+########################################################
+# sender filtering
+include "$MAILFILTER/maildrop-from.conf"
+########################################################
+
+########################################################
+# spam filtering
+include "$MAILFILTER/maildrop-spam.conf"
+########################################################
+
+########################################################
+# special filter for subject lines and "froms"
+include "$MAILFILTER/maildrop-subj.conf"
+########################################################
+
+########################################################
+# special filter for mail body
+#include "$MAILFILTER/maildrop-body.conf"
+########################################################
 
 #### default
-to "$DEFAULT"
+to "$MAILDIR"
 
