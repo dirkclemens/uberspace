@@ -2,7 +2,7 @@
 // https://stackoverflow.com/questions/8226958/simple-php-editor-of-text-files
 
 // configuration
-$url = 'http://www.adcore.de/maillist/list.php';
+$url = 'http://xxxxxxxxx.xx/maillist/list.php';
 $file = 'mailfilter-catchall.log';
 
 $errormsg = '';
